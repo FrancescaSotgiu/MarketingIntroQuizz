@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Marketing Mastery Game</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { min-height: 100vh; background: #f5f7ff; font-family: 'DM Sans', sans-serif; color: #0f172a; overflow-x: hidden; }
+
+  @keyframes float { from { transform: translateY(0) scale(1); opacity: 0.3; } to { transform: translateY(-20px) scale(1.4); opacity: 0.7; } }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 70% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: block; animation: slideUp 0.5s ease both; }
+
+  #bg-glow-1 { position: fixed; top: -20%; right: -10%; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(30,64,175,0.10) 0%, transparent 70%); pointer-events: none; z-index: 0; transition: background 0.8s ease; }
+  #bg-glow-2 { position: fixed; bottom: -20%; left: -10%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  #particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+  .container { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+  .center { text-align: center; }
+
+  /* Typography */
+  .syne { font-family: 'Syne', sans-serif; }
+  .label-tag { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #1e40af; margin-bottom: 20px; display: block; }
+  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(42px, 8vw, 80px); font-weight: 800; line-height: 1.05; background: linear-gradient(135deg, #0f172a 30%, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-title.purple { background: linear-gradient(135deg, #0f172a 30%, #7c3aed); -webkit-background-clip: text; background-clip: text; }
+  .subtitle { font-size: 17px; color: rgba(15,23,42,0.6); max-width: 440px; line-height: 1.65; margin: 16px auto 0; }
+
+  /* Badges */
+  .pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.10); border-radius: 100px; padding: 8px 16px; font-size: 13px; color: rgba(15,23,42,0.55); }
+  .pill-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 20px 0 48px; }
+  .cat-tag { display: inline-block; border-radius: 6px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
+  .cat-tag.orange { background: rgba(30,64,175,0.08); border: 1px solid rgba(30,64,175,0.22); color: #1e40af; }
+  .cat-tag.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); color: #7c3aed; }
+
+  /* Buttons */
+  .btn-primary { background: #1e40af; color: #fff; border: none; border-radius: 100px; padding: 18px 54px; font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-block; }
+  .btn-primary:hover { transform: scale(1.04); filter: brightness(1.1); }
+  .btn-primary.purple { background: #7c3aed; }
+  .btn-primary.full { width: 100%; }
+  .btn-next { background: #1e40af; color: #fff; border: none; border-radius: 100px; padding: 15px 40px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s ease; margin-top: 4px; }
+  .btn-next:hover { filter: brightness(1.1); }
+  .btn-next.purple { background: #7c3aed; }
+
+  /* Progress */
+  .progress-bar-wrap { height: 3px; background: rgba(0,0,0,0.07); border-radius: 100px; margin-bottom: 36px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #1e40af, #3b82f6); transition: width 0.5s ease; }
+  .progress-bar-fill.purple { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+
+  /* Game header */
+  .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .game-brand { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: #1e40af; }
+  .game-brand.purple { color: #7c3aed; }
+  .game-round-label { font-size: 12px; color: rgba(15,23,42,0.4); margin-top: 2px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .q-counter { background: rgba(0,0,0,0.05); border-radius: 100px; padding: 6px 16px; font-size: 13px; font-weight: 600; }
+  .round2-badge { background: rgba(124,58,237,0.10); border: 1px solid rgba(124,58,237,0.22); border-radius: 100px; padding: 5px 13px; font-size: 12px; color: #7c3aed; font-weight: 600; }
+
+  /* Question */
+  .question-text { font-family: 'Syne', sans-serif; font-size: clamp(19px, 3.2vw, 25px); font-weight: 700; line-height: 1.35; margin-bottom: 32px; color: #0f172a; }
+  .scenario-box { background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.16); border-radius: 12px; padding: 16px 18px; font-size: 14px; color: rgba(15,23,42,0.7); line-height: 1.7; margin-bottom: 28px; font-style: italic; }
+
+  /* Options */
+  .options-list { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
+  .opt-btn { background: rgba(0,0,0,0.02); border: 1.5px solid rgba(0,0,0,0.09); border-radius: 12px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 13px; text-align: left; color: #0f172a; font-size: 14px; cursor: pointer; transition: all 0.2s ease; width: 100%; font-family: 'DM Sans', sans-serif; }
+  .opt-btn:hover:not(:disabled) { transform: translateX(5px); border-color: rgba(30,64,175,0.5); background: rgba(30,64,175,0.06); }
+  .opt-btn:disabled { cursor: default; }
+  .opt-btn.correct { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.45); color: #065f46; animation: popIn 0.3s ease both; }
+  .opt-btn.wrong { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.4); color: #991b1b; animation: popIn 0.3s ease both; }
+  .opt-letter { width: 26px; height: 26px; border-radius: 7px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; color: rgba(15,23,42,0.4); margin-top: 1px; }
+  .opt-btn.correct .opt-letter { color: #065f46; }
+  .opt-btn.wrong .opt-letter { color: #991b1b; }
+  .opt-text { line-height: 1.55; }
+
+  /* Explanation */
+  .explanation { background: rgba(0,0,0,0.02); border-radius: 12px; padding: 14px 18px; font-size: 14px; line-height: 1.65; color: rgba(15,23,42,0.7); margin-bottom: 24px; animation: slideUp 0.4s ease both; }
+  .explanation.correct-border { border: 1px solid rgba(0,0,0,0.06); border-left: 3px solid #34d399; }
+  .explanation.wrong-border { border: 1px solid rgba(0,0,0,0.06); border-left: 3px solid #f87171; }
+  .explanation-label { font-weight: 600; }
+  .explanation-label.green { color: #059669; }
+  .explanation-label.red { color: #dc2626; }
+
+  /* Full solution (Round 2) */
+  .solution-box { background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.18); border-radius: 14px; padding: 20px; margin-bottom: 14px; animation: slideUp 0.4s ease both; }
+  .solution-verdict { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: #7c3aed; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .solution-body { font-size: 14px; line-height: 1.75; color: rgba(15,23,42,0.75); }
+  .lessons-box { background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 18px 20px; animation: slideUp 0.4s ease both; }
+  .lessons-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: rgba(15,23,42,0.4); text-transform: uppercase; margin-bottom: 14px; }
+  .lesson-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: rgba(15,23,42,0.78); line-height: 1.5; margin-bottom: 9px; }
+  .lesson-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(124,58,237,0.10); border: 1px solid rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #7c3aed; flex-shrink: 0; margin-top: 2px; }
+
+  /* Between rounds */
+  .score-display { font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 800; color: #1e40af; margin: 20px 0 6px; }
+  .score-display span { font-size: 24px; color: rgba(15,23,42,0.35); }
+  .between-box { background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.18); border-radius: 16px; padding: 20px 24px; margin-bottom: 36px; text-align: left; }
+  .between-label { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #7c3aed; text-transform: uppercase; margin-bottom: 14px; }
+  .preview-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; color: rgba(15,23,42,0.65); align-items: center; }
+  .preview-item:last-child { border-bottom: none; }
+  .preview-num { width: 24px; height: 24px; border-radius: 50%; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #7c3aed; flex-shrink: 0; }
+
+  /* Results */
+  .scores-row { display: flex; justify-content: center; gap: 32px; margin: 24px 0; flex-wrap: wrap; }
+  .score-cell { text-align: center; }
+  .score-big { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; }
+  .score-big span { font-size: 18px; color: rgba(15,23,42,0.35); }
+  .score-cell-label { font-size: 12px; color: rgba(15,23,42,0.45); margin-top: 4px; }
+  .review-section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; color: rgba(15,23,42,0.4); text-transform: uppercase; margin-bottom: 16px; }
+  .review-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 18px 20px; margin-bottom: 10px; cursor: pointer; transition: background 0.25s ease; background: #fff; }
+  .review-card:hover { background: rgba(30,64,175,0.03); }
+  .review-card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .review-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .review-icon.correct { background: rgba(52,211,153,0.10); border: 1px solid rgba(52,211,153,0.4); color: #059669; }
+  .review-icon.wrong { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); color: #dc2626; }
+  .review-q { font-size: 14px; font-weight: 500; color: #0f172a; line-height: 1.4; }
+  .review-cat { font-size: 12px; color: rgba(15,23,42,0.4); margin-top: 2px; }
+  .review-toggle { color: #7c3aed; font-size: 18px; flex-shrink: 0; }
+  .review-body { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.07); animation: slideUp 0.3s ease both; }
+  .review-body p { font-size: 13px; color: rgba(15,23,42,0.65); line-height: 1.7; margin-bottom: 16px; }
+  .review-lesson { display: flex; gap: 10px; font-size: 13px; color: rgba(15,23,42,0.72); line-height: 1.5; margin-bottom: 8px; }
+  .review-arrow { color: #7c3aed; font-weight: 700; flex-shrink: 0; }
+
+  /* Footer attribution */
+  .footer-attribution { margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(30,64,175,0.15); text-align: center; }
+  .footer-attribution p { font-size: 13px; color: rgba(15,23,42,0.5); line-height: 1.6; }
+  .footer-attribution strong { color: #1e40af; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="bg-glow-1"></div>
+<div id="bg-glow-2"></div>
+<div id="particles"></div>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active center">
+  <div class="container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding-top:60px;padding-bottom:60px;">
+    <img src="VU-logo-RGB.jpg" alt="VU Amsterdam Logo" style="height:64px;width:auto;margin-bottom:32px;object-fit:contain;" />
+    <span class="label-tag">Interactive Learning</span>
+    <h1 class="hero-title">Marketing<br>Mastery</h1>
+    <p class="subtitle">Two rounds. Eight theory questions, then three real-world case studies with complete analysis.</p>
+    <div class="pill-row" style="margin-top:28px;">
+      <span class="pill">🎯 Round 1: 8 Theory Qs</span>
+      <span class="pill">🧠 Round 2: 3 Case Studies</span>
+      <span class="pill">📋 Full Solutions & Key Lessons</span>
+    </div>
+    <button class="btn-primary" onclick="startGame()">Start Round 1 →</button>
+    <div class="footer-attribution">
+      <p><strong>Prof. Francesca Sotgiu</strong><br>Developed for the VU PreMaster Marketing course 2026</p>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div class="container">
+    <div class="game-header">
+      <div>
+        <div class="game-brand" id="game-brand">Marketing Mastery</div>
+        <div class="game-round-label" id="round-label">Round 1 — Theory</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="round2-badge" class="round2-badge" style="display:none;">Round 2</span>
+        <span class="q-counter" id="q-counter">1/8</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="cat-tag orange" id="cat-tag"></div>
+    <h2 class="question-text" id="question-text"></h2>
+    <div class="scenario-box" id="scenario-box" style="display:none;"></div>
+    <div class="options-list" id="options-list"></div>
+    <div id="feedback-area"></div>
+    <button class="btn-next" id="btn-next" style="display:none;" onclick="nextQuestion()">Next Question →</button>
+  </div>
+</div>
+
+<!-- BETWEEN ROUNDS -->
+<div id="screen-between" class="screen center">
+  <div class="container" style="display:flex;flex-direction:column;align-items:center;padding-top:60px;padding-bottom:60px;">
+    <div style="font-size:60px;margin-bottom:12px;" id="r1-badge-emoji">🎯</div>
+    <span class="label-tag">Round 1 Complete</span>
+    <h2 class="hero-title" style="font-size:clamp(28px,5vw,44px);" id="r1-badge-label">Brand Strategist</h2>
+    <div class="score-display" id="r1-score-display">0<span>/8</span></div>
+    <p style="color:rgba(15,23,42,0.55);font-size:15px;margin-bottom:40px;max-width:460px;line-height:1.6;">Theory done. Now for the real challenge — three actual marketing decisions that shaped history. Think carefully.</p>
+    <div class="between-box" style="width:100%;max-width:520px;">
+      <div class="between-label">What's coming in Round 2</div>
+      <div class="preview-item"><span class="preview-num">1</span> Should a company lower its price to beat competitors?</div>
+      <div class="preview-item"><span class="preview-num">2</span> Should Nike focus its marketing exclusively on elite athletes?</div>
+      <div class="preview-item" style="border-bottom:none;"><span class="preview-num">3</span> Should Coca-Cola partner with McDonald's?</div>
+    </div>
+    <button class="btn-primary purple" onclick="startRound2()">Start Round 2 →</button>
+    <div class="footer-attribution">
+      <img src="VU-logo-RGB.jpg" alt="VU Amsterdam Logo" style="height:48px;width:auto;margin-bottom:12px;object-fit:contain;" />
+      <p><strong>Prof. Francesca Sotgiu</strong><br>Developed for the VU PreMaster Marketing course 2026</p>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL RESULT -->
+<div id="screen-result" class="screen">
+  <div class="container center" style="padding-top:50px;padding-bottom:80px;">
+    <div style="font-size:64px;margin-bottom:12px;">🏆</div>
+    <span class="label-tag" style="color:#7c3aed;">All Rounds Complete</span>
+    <h2 class="hero-title purple" id="final-title" style="font-size:clamp(30px,6vw,52px);">Marketing Master</h2>
+    <div class="scores-row">
+      <div class="score-cell"><div class="score-big" style="color:#1e40af;" id="final-r1">0<span>/8</span></div><div class="score-cell-label">Round 1</div></div>
+      <div class="score-cell"><div class="score-big" style="color:#7c3aed;" id="final-r2">0<span>/3</span></div><div class="score-cell-label">Round 2</div></div>
+      <div class="score-cell"><div class="score-big" style="color:#059669;" id="final-total">0<span>/11</span></div><div class="score-cell-label">Total</div></div>
+    </div>
+    <p style="color:rgba(15,23,42,0.55);font-size:15px;margin-bottom:48px;" id="final-message"></p>
+
+    <div style="text-align:left;margin-bottom:40px;">
+      <div class="review-section-title">📚 Case Study Review — Key Lessons</div>
+      <div id="review-cards"></div>
+    </div>
+
+    <button class="btn-primary full" onclick="restartGame()">Play Again</button>
+    <div class="footer-attribution" style="margin-top:48px;">
+      <img src="VU-logo-RGB.jpg" alt="VU Amsterdam Logo" style="height:48px;width:auto;margin-bottom:12px;object-fit:contain;" />
+      <p><strong>Prof. Francesca Sotgiu</strong><br>Developed for the VU PreMaster Marketing course 2026</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROUND1 = [
+  { id:1, category:"4 P's of Marketing", question:"A company lowers its product price by 20% to beat competitors. Which 'P' are they adjusting?", options:["Product","Price","Place","Promotion"], correct:1, explanation:"Price is the amount customers pay. Competitive pricing strategies fall squarely under this P." },
+  { id:2, category:"Target Audience", question:"Nike releases a shoe campaign featuring elite athletes. What segmentation strategy is this?", options:["Geographic","Demographic","Psychographic","Behavioral"], correct:2, explanation:"Psychographic segmentation targets lifestyle, values, and aspirations — like the aspiration to perform like a pro athlete." },
+  { id:3, category:"Brand Strategy", question:"Coca-Cola and McDonald's partner for a joint promotion. This is called…", options:["Co-branding","Brand extension","Rebranding","White labeling"], correct:0, explanation:"Co-branding is when two brands collaborate on a campaign or product to leverage each other's audiences." },
+  { id:4, category:"Digital Marketing", question:"A blog post ranks #1 on Google without paid ads. This traffic is called…", options:["Paid traffic","Referral traffic","Organic traffic","Direct traffic"], correct:2, explanation:"Organic traffic comes from unpaid search results — the result of good SEO and quality content." },
+  { id:5, category:"Consumer Behavior", question:"Buying coffee every morning without comparing brands is an example of…", options:["Impulse buying","Habitual buying","Complex buying","Variety seeking"], correct:1, explanation:"Habitual buying means low involvement, routine purchases made without much deliberation." },
+  { id:6, category:"Pricing Strategy", question:"Apple prices new iPhones at $999 to signal premium quality. This is called…", options:["Penetration pricing","Skimming pricing","Prestige pricing","Bundle pricing"], correct:2, explanation:"Prestige (or premium) pricing uses high prices intentionally to create a perception of luxury and exclusivity." },
+  { id:7, category:"Social Media", question:"A brand pays a fitness influencer to post about their protein powder. This is…", options:["Earned media","Paid media","Owned media","Shared media"], correct:1, explanation:"Paid media includes any promotional content a brand pays for — including influencer partnerships." },
+  { id:8, category:"Marketing Funnel", question:"A customer sees your ad, visits your site, but doesn't buy. They're in which funnel stage?", options:["Awareness","Consideration","Conversion","Retention"], correct:1, explanation:"Consideration is when prospects are actively evaluating options — they know you exist but haven't committed." }
+];
+
+const ROUND2 = [
+  {
+    id:9, category:"Pricing Strategy",
+    question:"Should a company lower its price by 20% to beat competitors?",
+    scenario:"FlowTech sells project management software at $50/month. A new rival launches at $40/month and is gaining customers fast. The CEO wants to immediately drop to $38/month to win back the market.",
+    options:["Yes — always match or beat competitor prices to protect market share","No — lower prices signal lower quality and erode brand value permanently","It depends — only if your cost structure allows it without destroying current and future margins","Never compete on price; compete on features only"],
+    correct:2,
+    verdict:"It depends — and here's the full analysis.",
+    body:"Price cuts can be a powerful short-term weapon, but they're dangerous if used reactively. FlowTech must first ask: can we sustain $38/month without operating at a loss? If margins collapse, no amount of new customers will save the business. Second, price cuts trigger price wars — the rival can always go lower. Third, dropping price signals to the market that the product was overpriced to begin with, eroding trust.\n\nThe smarter play: audit why customers are switching. Is it truly price, or is it a feature gap? If it's price sensitivity, consider a tiered plan (a $29 'starter' tier) rather than slashing the flagship price. This protects brand equity while serving budget customers.",
+    lessons:["Price cuts are a race to the bottom — competitors can always go lower","Understand WHY customers leave before reacting with price changes","Tiered pricing protects premium positioning while capturing budget segments","Your cost structure must support any price before you commit to it","Price signals quality — a cut can permanently damage brand perception"]
+  },
+  {
+    id:10, category:"Target Audience",
+    question:"Should Nike focus its marketing exclusively on elite athletes?",
+    scenario:"Nike's CMO is debating strategy: double down on elite athlete sponsorships (LeBron, Serena, Ronaldo) to reinforce aspirational brand equity, OR expand campaigns to include everyday recreational athletes to grow the addressable market.",
+    options:["Yes — elite athletes are the brand's core identity and must be protected","No — everyday athletes are a bigger market and Nike is leaving money behind","Both — use elite athletes for brand equity, everyday athletes for volume","Neither — Nike should focus on streetwear and fashion audiences instead"],
+    correct:2,
+    verdict:"Both — and Nike already executes this brilliantly.",
+    body:"Nike's genius is a two-tier strategy: elite athletes serve as the aspirational 'proof point' (if it's good enough for LeBron, it's good enough for me), while everyday athlete campaigns — like the iconic 'Find Your Greatness' — convert that aspiration into mass-market sales.\n\nFocusing only on elites would limit Nike to a small premium segment. Abandoning elites would strip the brand of its credibility and premium pricing power. The interplay between both audiences is what makes Nike's $50B+ valuation possible.\n\nThe lesson: segment your audience, but ensure your brand story connects all segments to a single emotional truth — in Nike's case, 'everyone is an athlete.'",
+    lessons:["Aspirational marketing (elite athletes) drives brand equity and premium pricing","Volume marketing (everyday athletes) drives revenue and market share","The best brands connect all audience segments to one emotional truth","Never confuse your 'brand audience' with your 'buying audience' — they can differ","Segmentation isn't about exclusion — it's about speaking to each group differently"]
+  },
+  {
+    id:11, category:"Brand Partnerships",
+    question:"Should Coca-Cola partner with McDonald's?",
+    scenario:"It's 1955. Coca-Cola is offered an exclusive global partnership with McDonald's: Coke will be the only soft drink served in all McDonald's restaurants worldwide, in exchange for favorable pricing and joint marketing. Some Coke executives worry about brand association with fast food.",
+    options:["No — associating Coke with fast food will cheapen the brand image","Yes — scale and distribution are more valuable than brand purity concerns","Only in the US — international markets have different brand perceptions","Only if McDonald's rebrands its drink offering to feature Coke prominently"],
+    correct:1,
+    verdict:"Yes — this is one of the greatest distribution deals in marketing history.",
+    body:"Coca-Cola and McDonald's have maintained one of the most successful brand partnerships in history since the 1950s. McDonald's serves Coke products in 100+ countries across 40,000+ restaurants, making it one of the world's largest single-client distribution relationships.\n\nThe brand association fear was unfounded: both brands occupy the same cultural space — accessible, American, joyful, universal. They reinforce each other. McDonald's gets a globally trusted beverage; Coke gets unparalleled daily touchpoints with hundreds of millions of consumers.\n\nThe deeper lesson: brand partnerships succeed when values align and each party gets something the other can't build alone. Coke couldn't build 40,000 restaurants. McDonald's couldn't build a globally beloved beverage brand. Together, they made each other stronger.",
+    lessons:["Distribution partnerships can be worth more than any advertising campaign","Brand association fears are often overstated — shared values matter more","Win-win partnerships work when each party brings irreplaceable value","Scale and daily consumer touchpoints are a long-term marketing asset","Strategic partnerships can lock out competitors for decades"]
+  }
+];
+
+// State
+let round = 1, currentQ = 0, score = 0, r2Score = 0;
+let answers = [], r2Answers = [], expandedCard = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); });
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function setRoundTheme(r) {
+  const glow = document.getElementById('bg-glow-1');
+  const brand = document.getElementById('game-brand');
+  const fill = document.getElementById('progress-fill');
+  const badge = document.getElementById('round2-badge');
+  const next = document.getElementById('btn-next');
+  if (r === 2) {
+    glow.style.background = 'radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%)';
+    brand.className = 'game-brand purple';
+    fill.className = 'progress-bar-fill purple';
+    badge.style.display = 'inline-block';
+    next.className = 'btn-next purple';
+    document.getElementById('round-label').textContent = 'Round 2 — Case Studies';
+  } else {
+    glow.style.background = 'radial-gradient(circle, rgba(30,64,175,0.10) 0%, transparent 70%)';
+    brand.className = 'game-brand';
+    fill.className = 'progress-bar-fill';
+    badge.style.display = 'none';
+    next.className = 'btn-next';
+    document.getElementById('round-label').textContent = 'Round 1 — Theory';
+  }
+}
+
+function renderQuestion() {
+  const qs = round === 1 ? ROUND1 : ROUND2;
+  const q = qs[currentQ];
+  const total = qs.length;
+
+  document.getElementById('q-counter').textContent = `${currentQ+1}/${total}`;
+  document.getElementById('progress-fill').style.width = `${(currentQ/total)*100}%`;
+
+  const catTag = document.getElementById('cat-tag');
+  catTag.textContent = q.category;
+  catTag.className = round === 2 ? 'cat-tag purple' : 'cat-tag orange';
+
+  document.getElementById('question-text').textContent = q.question;
+
+  const scenBox = document.getElementById('scenario-box');
+  if (round === 2 && q.scenario) { scenBox.style.display = 'block'; scenBox.textContent = '📋 ' + q.scenario; }
+  else { scenBox.style.display = 'none'; }
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-letter">${String.fromCharCode(65+idx)}</span><span class="opt-text">${opt}</span>`;
+    btn.onclick = () => handleSelect(idx);
+    list.appendChild(btn);
+  });
+
+  document.getElementById('feedback-area').innerHTML = '';
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-next').textContent = (currentQ+1 === total) ? (round===1 ? 'Complete Round 1 →' : 'See Final Results →') : 'Next Question →';
+}
+
+function handleSelect(idx) {
+  const qs = round === 1 ? ROUND1 : ROUND2;
+  const q = qs[currentQ];
+  const isCorrect = idx === q.correct;
+  if (round === 1) { if (isCorrect) score++; answers.push({correct: isCorrect}); }
+  else { if (isCorrect) r2Score++; r2Answers.push({correct: isCorrect}); }
+
+  // Style buttons
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) { btn.classList.add('correct'); btn.querySelector('.opt-letter').textContent = '✓'; }
+    else if (i === idx && !isCorrect) { btn.classList.add('wrong'); btn.querySelector('.opt-letter').textContent = '✗'; }
+  });
+
+  // Feedback
+  const fb = document.getElementById('feedback-area');
+  if (round === 1) {
+    fb.innerHTML = `<div class="explanation ${isCorrect?'correct-border':'wrong-border'}"><span class="explanation-label ${isCorrect?'green':'red'}">${isCorrect?'✓ Correct! ':'✗ Not quite. '}</span>${q.explanation}</div>`;
+  } else {
+    const lessonsHTML = q.lessons.map((l,i) => `<div class="lesson-item"><span class="lesson-num">${i+1}</span>${l}</div>`).join('');
+    fb.innerHTML = `
+      <div class="solution-box">
+        <div class="solution-verdict">${isCorrect?'✓ Correct — ':'✗ The Answer: '}${q.verdict}</div>
+        <div class="solution-body">${q.body.replace(/\n\n/g,'<br><br>')}</div>
+      </div>
+      <div class="lessons-box">
+        <div class="lessons-title">📌 Key Lessons to Remember</div>
+        ${lessonsHTML}
+      </div>`;
+  }
+
+  document.getElementById('btn-next').style.display = 'block';
+}
+
+function nextQuestion() {
+  const qs = round === 1 ? ROUND1 : ROUND2;
+  if (currentQ + 1 < qs.length) {
+    currentQ++;
+    renderQuestion();
+  } else {
+    if (round === 1) showBetween();
+    else showResult();
+  }
+}
+
+function startGame() {
+  round = 1; currentQ = 0; score = 0; r2Score = 0; answers = []; r2Answers = [];
+  setRoundTheme(1);
+  renderQuestion();
+  showScreen('screen-game');
+}
+
+function showBetween() {
+  const badges = [{t:0,l:"Marketing Rookie",e:"🎯"},{t:5,l:"Brand Strategist",e:"📊"},{t:7,l:"Marketing Maven",e:"🚀"},{t:8,l:"CMO Material",e:"👑"}];
+  let badge = badges[0];
+  badges.forEach(b => { if (score >= b.t) badge = b; });
+  document.getElementById('r1-badge-emoji').textContent = badge.e;
+  document.getElementById('r1-badge-label').textContent = badge.label || badge.l;
+  document.getElementById('r1-score-display').innerHTML = `${score}<span>/8</span>`;
+  showScreen('screen-between');
+}
+
+function startRound2() {
+  round = 2; currentQ = 0;
+  setRoundTheme(2);
+  renderQuestion();
+  showScreen('screen-game');
+}
+
+function showResult() {
+  const total = score + r2Score;
+  const titles = [[10,"Marketing Master"],[8,"Strategic Thinker"],[6,"Brand Builder"],[0,"Future Marketer"]];
+  const msgs = [[10,"Perfect score! You clearly live and breathe marketing."],[8,"Strong performance — you know your fundamentals cold."],[6,"Good work — a bit more study and you'll ace it."],[0,"Keep learning — great marketers are made, not born!"]];
+  let title = titles[titles.length-1][1], msg = msgs[msgs.length-1][1];
+  titles.forEach(([t,l]) => { if (total >= t) title = l; });
+  msgs.forEach(([t,m]) => { if (total >= t) msg = m; });
+
+  document.getElementById('final-title').textContent = title;
+  document.getElementById('final-message').textContent = msg;
+  document.getElementById('final-r1').innerHTML = `${score}<span>/8</span>`;
+  document.getElementById('final-r2').innerHTML = `${r2Score}<span>/3</span>`;
+  document.getElementById('final-total').innerHTML = `${total}<span>/11</span>`;
+
+  const cards = document.getElementById('review-cards');
+  cards.innerHTML = ROUND2.map((q, qi) => {
+    const correct = r2Answers[qi]?.correct;
+    return `<div class="review-card" onclick="toggleCard(${qi})">
+      <div class="review-card-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="review-icon ${correct?'correct':'wrong'}">${correct?'✓':'✗'}</span>
+          <div><div class="review-q">${q.question}</div><div class="review-cat">${q.category}</div></div>
+        </div>
+        <span class="review-toggle" id="toggle-${qi}">+</span>
+      </div>
+      <div class="review-body" id="review-body-${qi}" style="display:none;">
+        <p>${q.body.replace(/\n\n/g,'<br><br>')}</p>
+        ${q.lessons.map(l => `<div class="review-lesson"><span class="review-arrow">→</span>${l}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  showScreen('screen-result');
+}
+
+function toggleCard(qi) {
+  const body = document.getElementById(`review-body-${qi}`);
+  const tog = document.getElementById(`toggle-${qi}`);
+  if (body.style.display === 'none') { body.style.display = 'block'; tog.textContent = '−'; }
+  else { body.style.display = 'none'; tog.textContent = '+'; }
+}
+
+function restartGame() { startGame(); }
+
+// Particles
+(function() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement('div');
+    const size = Math.random() * 3 + 1;
+    d.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;border-radius:50%;background:rgba(30,64,175,0.3);animation:float ${Math.random()*6+4}s ease-in-out ${Math.random()*4}s infinite alternate;`;
+    container.appendChild(d);
+  }
+})();
+</script>
+</body>
+</html>
